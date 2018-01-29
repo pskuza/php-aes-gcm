@@ -29,11 +29,11 @@ The release process [is described here](doc/Release.md).
 
 # Prerequisites
 
-This library needs at least ![PHP 5.4+](https://img.shields.io/badge/PHP-5.4%2B-ff69b4.svg).
+This library needs at least ![PHP 5.6+](https://img.shields.io/badge/PHP-5.6%2B-ff69b4.svg).
 
-It has been successfully tested using `PHP 5.4` to `PHP 7.1`, `HHVM` and nightly branches.
+It has been successfully tested using `PHP 5.6` to `PHP 7.2`, `HHVM` and nightly branches.
 
-If you use PHP 7.1+, this library has very good performance. **If you do not use PHP 7.1+, we highly recommend you to install the [PHP Crypto extension](https://github.com/bukka/php-crypto).**
+If you use PHP 7.1+, this library has very good performance. **If you do not use PHP 7.1+, we highly recommend you to install the [PHP Crypto extension](https://github.com/bukka/php-crypto) or [PHP libsodium extension](https://github.com/jedisct1/libsodium-php).**
 This extension drastically increase the performance of this library. With our pure PHP method, you will have low performance.
 
 # Installation

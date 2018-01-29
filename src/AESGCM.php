@@ -35,7 +35,9 @@ final class AESGCM
         Assertion::integer($tag_length, 'Invalid tag length. Supported values are: 128, 120, 112, 104 and 96.');
         Assertion::inArray($tag_length, [128, 120, 112, 104, 96], 'Invalid tag length. Supported values are: 128, 120, 112, 104 and 96.');
 
-        if (version_compare(PHP_VERSION, '7.1.0RC5') >= 0 && null !== $P) {
+        if (extension_loaded('sodium') && sodium_crypto_aead_aes256gcm_is_available && $tag_length === 128 && $key_length === SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES) {
+            return self::encryptWithPHPsodium($K, $IV, $P, $A);
+        } elseif (version_compare(PHP_VERSION, '7.1.0RC5') >= 0) {
             return self::encryptWithPHP71($K, $key_length, $IV, $P, $A, $tag_length);
         } elseif (class_exists('\Crypto\Cipher')) {
             return self::encryptWithCryptoExtension($K, $key_length, $IV, $P, $A, $tag_length);
@@ -78,6 +80,22 @@ final class AESGCM
         Assertion::true(false !== $C, 'Unable to encrypt the data.');
 
         return [$C, $T];
+    }
+
+    /**
+     * @param string      $K          Key encryption key
+     * @param string      $IV         Initialization vector
+     * @param null|string $P          Data to encrypt (null for authentication)
+     * @param null|string $A          Additional Authentication Data
+     *
+     * @return array
+     */
+    private static function encryptWithPHPsodium($K, $IV, $P = null, $A = null)
+    {
+        $C = sodium_crypto_aead_aes256gcm_encrypt($P, $A, $IV, $K);
+        Assertion::true(false !== $C, 'Unable to encrypt the data.');
+
+        return [$C];
     }
 
     /**
@@ -147,7 +165,9 @@ final class AESGCM
         Assertion::integer($tag_length, 'Invalid tag length. Supported values are: 128, 120, 112, 104 and 96.');
         Assertion::inArray($tag_length, [128, 120, 112, 104, 96], 'Invalid tag length. Supported values are: 128, 120, 112, 104 and 96.');
 
-        if (version_compare(PHP_VERSION, '7.1.0RC5') >= 0 && null !== $C) {
+        if (extension_loaded('sodium') && sodium_crypto_aead_aes256gcm_is_available && $tag_length === 128 && $key_length === SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES) {
+            return self::decryptWithPHPsodium($K, $IV, $P, $A);
+        } elseif (version_compare(PHP_VERSION, '7.1.0RC5') >= 0) {
             return self::decryptWithPHP71($K, $key_length, $IV, $C, $A, $T);
         } elseif (class_exists('\Crypto\Cipher')) {
             return self::decryptWithCryptoExtension($K, $key_length, $IV, $C, $A, $T, $tag_length);
@@ -193,6 +213,23 @@ final class AESGCM
     {
         $mode = 'aes-'.($key_length).'-gcm';
         $P = openssl_decrypt(null === $C ? '' : $C, $mode, $K, OPENSSL_RAW_DATA, $IV, $T, $A);
+        Assertion::true(false !== $P, 'Unable to decrypt or to verify the tag.');
+
+        return $P;
+    }
+
+    /**
+     * @param string      $K          Key encryption key
+     * @param string      $IV         Initialization vector
+     * @param string|null $C          Data to encrypt (null for authentication)
+     * @param string|null $A          Additional Authentication Data
+     * @param string      $T          Tag
+     *
+     * @return string
+     */
+    private static function decryptWithPHPsodium($K, $IV, $C, $A, $T)
+    {
+        $P = sodium_crypto_aead_aes256gcm_decrypt($P . $T, $A, $IV, $K);
         Assertion::true(false !== $P, 'Unable to decrypt or to verify the tag.');
 
         return $P;
